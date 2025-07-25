@@ -5,6 +5,34 @@ import { useToast } from '@/components/ui/use-toast';
 
 const AuthContext = createContext(undefined);
 
+// Usuário de demonstração para testes
+const DEMO_USER = {
+  id: 'demo-user-123',
+  email: 'admin@universidadedigital.com',
+  password: '123456',
+  profile: {
+    id: 'demo-user-123',
+    nome: 'Administrador Demo',
+    email: 'admin@universidadedigital.com',
+    tipo: 'admin',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+};
+
+const DEMO_STUDENT = {
+  id: 'demo-student-456',
+  email: 'aluno@universidadedigital.com',
+  password: '123456',
+  profile: {
+    id: 'demo-student-456',
+    nome: 'João Silva',
+    email: 'aluno@universidadedigital.com',
+    tipo: 'aluno',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+};
 export const AuthProvider = ({ children }) => {
   const { toast } = useToast();
 
@@ -15,6 +43,14 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = useCallback(async (userId) => {
     if (!userId) return null;
+    
+    // Verificar se é usuário demo
+    if (userId === DEMO_USER.id) {
+      return DEMO_USER.profile;
+    }
+    if (userId === DEMO_STUDENT.id) {
+      return DEMO_STUDENT.profile;
+    }
     
     try {
       const { data, error } = await supabase
@@ -123,6 +159,55 @@ export const AuthProvider = ({ children }) => {
   }, [toast]);
 
   const signIn = useCallback(async (email, password) => {
+    // Verificar se é login demo
+    if (email === DEMO_USER.email && password === DEMO_USER.password) {
+      const demoSession = {
+        user: {
+          id: DEMO_USER.id,
+          email: DEMO_USER.email,
+          user_metadata: { full_name: DEMO_USER.profile.nome }
+        },
+        access_token: 'demo-token',
+        refresh_token: 'demo-refresh'
+      };
+      
+      setSession(demoSession);
+      setUser(demoSession.user);
+      setUserProfile(DEMO_USER.profile);
+      setLoading(false);
+      
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo, Administrador!",
+      });
+      
+      return { error: null };
+    }
+    
+    if (email === DEMO_STUDENT.email && password === DEMO_STUDENT.password) {
+      const demoSession = {
+        user: {
+          id: DEMO_STUDENT.id,
+          email: DEMO_STUDENT.email,
+          user_metadata: { full_name: DEMO_STUDENT.profile.nome }
+        },
+        access_token: 'demo-token',
+        refresh_token: 'demo-refresh'
+      };
+      
+      setSession(demoSession);
+      setUser(demoSession.user);
+      setUserProfile(DEMO_STUDENT.profile);
+      setLoading(false);
+      
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo, João!",
+      });
+      
+      return { error: null };
+    }
+    
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -149,6 +234,20 @@ export const AuthProvider = ({ children }) => {
   }, [toast]);
 
   const signOut = useCallback(async () => {
+    // Se for usuário demo, apenas limpar o estado local
+    if (user && (user.id === DEMO_USER.id || user.id === DEMO_STUDENT.id)) {
+      setSession(null);
+      setUser(null);
+      setUserProfile(null);
+      
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+      });
+      
+      return { error: null };
+    }
+    
     try {
       const { error } = await supabase.auth.signOut();
 
@@ -174,6 +273,18 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = useCallback(async (updates) => {
     if (!user) return { error: new Error('Usuário não autenticado') };
 
+    // Se for usuário demo, simular atualização
+    if (user.id === DEMO_USER.id || user.id === DEMO_STUDENT.id) {
+      const updatedProfile = { ...userProfile, ...updates };
+      setUserProfile(updatedProfile);
+      
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+      
+      return { error: null };
+    }
     try {
       const { error } = await supabase
         .from('profiles')

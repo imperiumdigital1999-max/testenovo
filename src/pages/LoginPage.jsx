@@ -130,6 +130,23 @@ const LoginPage = () => {
                            {isSignUp ? 'Já tem uma conta? Faça Login' : 'Não tem uma conta? Cadastre-se'}
                         </Button>
                     </div>
+                    
+                    {/* Usuários de Demonstração */}
+                    <div className="mt-8 pt-6 border-t border-white/10">
+                        <p className="text-center text-sm text-gray-400 mb-4">Usuários de Demonstração:</p>
+                        <div className="space-y-2 text-xs text-gray-500">
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="font-semibold text-red-400">👑 Administrador</p>
+                                <p>Email: admin@universidadedigital.com</p>
+                                <p>Senha: 123456</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="font-semibold text-blue-400">👨‍🎓 Aluno</p>
+                                <p>Email: aluno@universidadedigital.com</p>
+                                <p>Senha: 123456</p>
+                            </div>
+                        </div>
+                    </div>
                 </motion.div>
             </div>
         </>
