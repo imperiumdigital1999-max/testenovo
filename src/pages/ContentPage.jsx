@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { Search, Filter, Play, Clock, Star, Users, ChevronRight, Lock, Crown } from 'lucide-react';
+import { Search, Filter, Play, Clock, Star, Users, ChevronRight, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
@@ -33,17 +33,15 @@ const ContentPage = () => {
 
       if (error) {
         console.error('Erro ao buscar cursos:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar cursos",
-          description: error.message,
-        });
+        // Usar cursos mock se não conseguir buscar do Supabase
+        setCursos(mockCourses);
         return;
       }
 
-      setCursos(data || []);
+      setCursos(data && data.length > 0 ? data : mockCourses);
     } catch (error) {
       console.error('Erro ao buscar cursos:', error);
+      setCursos(mockCourses);
     } finally {
       setLoading(false);
     }
@@ -70,38 +68,78 @@ const ContentPage = () => {
     }
   };
 
-  const hasAccess = (cursoId) => {
-    // Usuário premium tem acesso a tudo
-    if (userProfile?.plano === 'premium') {
-      return true;
+  // Cursos mock para fallback
+  const mockCourses = [
+    {
+      id: 1,
+      titulo: 'React do Zero ao Avançado',
+      descricao: 'Aprenda React desde o básico até conceitos avançados com projetos práticos.',
+      capa: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee',
+      slug: 'react-zero-avancado',
+      categoria: 'Programação'
+    },
+    {
+      id: 2,
+      titulo: 'IA Generativa na Prática',
+      descricao: 'Domine as ferramentas de IA mais modernas do mercado.',
+      capa: 'https://images.unsplash.com/photo-1677442136019-21780ecad995',
+      slug: 'ia-generativa-pratica',
+      categoria: 'Inteligência Artificial'
+    },
+    {
+      id: 3,
+      titulo: 'UX/UI Design Moderno',
+      descricao: 'Crie interfaces incríveis e experiências memoráveis.',
+      capa: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+      slug: 'ux-ui-design-moderno',
+      categoria: 'Design'
+    },
+    {
+      id: 4,
+      titulo: 'Python para Data Science',
+      descricao: 'Análise de dados e machine learning com Python.',
+      capa: 'https://images.unsplash.com/photo-1526379879527-8559ecfcaec0',
+      slug: 'python-data-science',
+      categoria: 'Programação'
+    },
+    {
+      id: 5,
+      titulo: 'Marketing Digital Avançado',
+      descricao: 'Estratégias completas para dominar o marketing online.',
+      capa: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f',
+      slug: 'marketing-digital-avancado',
+      categoria: 'Marketing Digital'
+    },
+    {
+      id: 6,
+      titulo: 'Node.js e APIs REST',
+      descricao: 'Desenvolvimento backend completo com Node.js.',
+      capa: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479',
+      slug: 'nodejs-apis-rest',
+      categoria: 'Programação'
     }
-    // Ou tem acesso específico ao curso
+  ];
+  const hasAccess = (cursoId) => {
     return userAccess.has(cursoId);
   };
 
   const handleCourseClick = (curso) => {
     if (hasAccess(curso.id)) {
-      // Usuário tem acesso - navegar para o curso
       toast({
         title: "🚧 Este recurso ainda não foi implementado—mas não se preocupe! Você pode solicitá-lo no seu próximo prompt! 🚀",
         duration: 3000,
       });
     } else {
-      // Usuário não tem acesso - mostrar opções
       showAccessOptions(curso);
     }
   };
 
   const showAccessOptions = (curso) => {
     toast({
-      title: "🔒 Conteúdo Bloqueado",
-      description: "Você precisa ter acesso a este curso para visualizá-lo.",
+      title: "🔒 Curso Bloqueado",
+      description: `Opções para acessar "${curso.titulo}": 1) Comprar curso individual 2) Assinar plano Premium`,
       duration: 5000,
     });
-    
-    // Aqui você pode implementar um modal com as opções:
-    // - Comprar curso individual
-    // - Assinar plano premium
   };
 
   const categories = [
@@ -110,12 +148,11 @@ const ContentPage = () => {
     'Inteligência Artificial',
     'Design',
     'Marketing Digital',
-    'Estética',
     'Negócios'
   ];
 
   const filteredCourses = cursos.filter(course => {
-    const matchesCategory = selectedCategory === 'Todos'; // Por enquanto, mostrar todos
+    const matchesCategory = selectedCategory === 'Todos' || course.categoria === selectedCategory;
     const matchesSearch = course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.descricao.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -128,20 +165,6 @@ const ContentPage = () => {
       </div>
     );
   }
-
-  const isPremiumUser = userProfile?.plano === 'premium';
-
-  const renderAccessBadge = () => {
-    if (isPremiumUser) {
-      return (
-        <div className="flex items-center space-x-2 mb-4">
-          <Crown className="h-5 w-5 text-yellow-400" />
-          <span className="text-yellow-400 font-semibold">Usuário Premium</span>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <>
@@ -163,7 +186,6 @@ const ContentPage = () => {
           <p className="text-gray-300 text-lg max-w-2xl mx-auto">
             Explore nossa coleção completa de cursos organizados por categoria
           </p>
-          {renderAccessBadge()}
         </motion.div>
 
         {/* Search and Filters */}
@@ -225,48 +247,25 @@ const ContentPage = () => {
                 <img  
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   alt={course.titulo}
-                  src={course.capa || "https://images.unsplash.com/photo-1635251595512-dc52146d5ae8"} />
+                  src={course.capa} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 
-                {/* Access Overlay */}
-                {!hasAccess(course.id) && (
-                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                    <div className="text-center">
-                      <Lock className="h-12 w-12 text-white mx-auto mb-2" />
-                      <p className="text-white font-semibold">Conteúdo Bloqueado</p>
-                      <p className="text-gray-300 text-sm">Clique para ver opções</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Play Button - só aparece se tem acesso */}
-                {hasAccess(course.id) && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 neon-glow">
+                {/* Play Button ou Lock Icon */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 neon-glow">
+                    {hasAccess(course.id) ? (
                       <Play className="h-8 w-8 text-white" />
-                    </div>
+                    ) : (
+                      <Lock className="h-8 w-8 text-white" />
+                    )}
                   </div>
-                )}
-
-                {/* Access Badge */}
-                <div className="absolute top-4 right-4">
-                  {hasAccess(course.id) ? (
-                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
-                      ✓ Liberado
-                    </div>
-                  ) : (
-                    <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-medium">
-                      🔒 Bloqueado
-                    </div>
-                  )}
                 </div>
 
-                {/* Premium Badge */}
-                {isPremiumUser && (
-                  <div className="absolute top-4 left-4">
-                    <div className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                      <Crown className="h-3 w-3" />
-                      <span>Premium</span>
+                {/* Lock Icon - aparece sempre se não tem acesso */}
+                {!hasAccess(course.id) && (
+                  <div className="absolute top-4 right-4">
+                    <div className="bg-black/50 rounded-full p-2">
+                      <Lock className="h-4 w-4 text-white" />
                     </div>
                   </div>
                 )}
@@ -275,38 +274,35 @@ const ContentPage = () => {
               {/* Course Info */}
               <div className="p-6 space-y-4">
                 <div>
-                  <h3 className={`text-xl font-bold mb-2 transition-colors ${
-                    hasAccess(course.id) 
-                      ? 'text-white group-hover:text-purple-300' 
-                      : 'text-gray-400'
-                  }`}>
+                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
                     {course.titulo}
                   </h3>
                   <p className="text-gray-400 text-sm mb-3">{course.descricao}</p>
                 </div>
 
-                {/* Access Status */}
                 <div className="flex items-center justify-between">
-                  <div className={`text-sm ${hasAccess(course.id) ? 'text-green-400' : 'text-red-400'}`}>
-                    {hasAccess(course.id) ? '✓ Acesso liberado' : '🔒 Acesso bloqueado'}
+                  <div className="flex items-center space-x-2 text-sm text-gray-400">
+                    <Clock className="h-4 w-4" />
+                    <span>2h 30min</span>
+                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                    <span>4.8</span>
                   </div>
-                  <ChevronRight className={`h-5 w-5 group-hover:translate-x-1 transition-transform ${
-                    hasAccess(course.id) ? 'text-purple-400' : 'text-gray-500'
-                  }`} />
+                  <ChevronRight className="h-5 w-5 text-purple-400 group-hover:translate-x-1 transition-transform" />
                 </div>
 
-                {/* Action Button */}
+                {/* Botão de ação */}
                 {!hasAccess(course.id) && (
                   <div className="pt-2">
                     <Button 
-                      className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white text-sm"
+                      className="w-full bg-gray-600 hover:bg-gray-500 text-white text-sm cursor-not-allowed"
+                      disabled
                       onClick={(e) => {
                         e.stopPropagation();
                         showAccessOptions(course);
                       }}
                     >
                       <Lock className="mr-2 h-4 w-4" />
-                      Desbloquear Curso
+                      Desbloquear
                     </Button>
                   </div>
                 )}
