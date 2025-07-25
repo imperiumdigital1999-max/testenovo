@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (userId) => {
+    if (!userId) return null;
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -22,23 +24,33 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        if (error.code !== 'PGRST116') { // Not found error is expected for new users
+          console.error('Error fetching user profile:', error);
+        }
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      if (error.name !== 'AbortError') { // Ignore abort errors
+        console.error('Error fetching user profile:', error);
+      }
       return null;
     }
   }, []);
+
   const handleSession = useCallback(async (session) => {
     setSession(session);
     setUser(session?.user ?? null);
     
     if (session?.user) {
-      const profile = await fetchUserProfile(session.user.id);
-      setUserProfile(profile);
+      try {
+        const profile = await fetchUserProfile(session.user.id);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Error handling session:', error);
+        setUserProfile(null);
+      }
     } else {
       setUserProfile(null);
     }
@@ -48,15 +60,29 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      handleSession(session);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        handleSession(session);
+      } catch (error) {
+        console.error('Error getting session:', error);
+        setLoading(false);
+      }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        handleSession(session);
+        try {
+          handleSession(session);
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+        }
       }
     );
 
@@ -64,56 +90,85 @@ export const AuthProvider = ({ children }) => {
   }, [handleSession]);
 
   const signUp = useCallback(async (email, password, options) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options,
-    });
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Sign up Failed",
-        description: error.message || "Something went wrong",
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options,
       });
-    }
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Sign up Failed",
+          description: error.message || "Something went wrong",
+        });
+        return { error };
+      }
+
       toast({
         title: "Cadastro realizado!",
         description: "Verifique seu email para confirmar a conta.",
       });
 
-    return { error };
+      return { error: null };
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
+      });
+      return { error };
+    }
   }, [toast]);
 
   const signIn = useCallback(async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro no login",
+          description: error.message || "Something went wrong",
+        });
+      }
+
+      return { error };
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro no login",
-        description: error.message || "Something went wrong",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
       });
+      return { error };
     }
-
-    return { error };
   }, [toast]);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao sair",
+          description: error.message || "Something went wrong",
+        });
+      }
+
+      return { error };
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao sair",
-        description: error.message || "Something went wrong",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
       });
+      return { error };
     }
-
-    return { error };
   }, [toast]);
 
   const updateProfile = useCallback(async (updates) => {
@@ -147,8 +202,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao atualizar perfil",
-        description: error.message,
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
       });
       return { error };
     }
