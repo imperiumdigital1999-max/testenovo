@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(undefined);
 
@@ -35,11 +36,13 @@ const DEMO_STUDENT = {
 };
 export const AuthProvider = ({ children }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const fetchUserProfile = useCallback(async (userId) => {
     if (!userId) return null;
@@ -96,11 +99,28 @@ export const AuthProvider = ({ children }) => {
       }
     } else {
       setUserProfile(null);
+      setHasRedirected(false);
     }
     
     setLoading(false);
   }, [fetchUserProfile]);
 
+  // Redirecionamento automático após carregamento do perfil
+  useEffect(() => {
+    if (!loading && userProfile && session && !hasRedirected) {
+      console.log("Redirecionando usuário baseado no tipo:", userProfile.tipo);
+      
+      if (userProfile.tipo === 'admin') {
+        console.log("Redirecionando admin para /admin/dashboard");
+        navigate('/admin/dashboard');
+      } else {
+        console.log("Redirecionando aluno para /");
+        navigate('/');
+      }
+      
+      setHasRedirected(true);
+    }
+  }, [loading, userProfile, session, hasRedirected, navigate]);
   useEffect(() => {
     const getSession = async () => {
       try {
@@ -183,6 +203,7 @@ export const AuthProvider = ({ children }) => {
       setUser(demoSession.user);
       setUserProfile(DEMO_USER.profile);
       setLoading(false);
+      setHasRedirected(false); // Permitir redirecionamento
       
       toast({
         title: "Login realizado!",
@@ -208,6 +229,7 @@ export const AuthProvider = ({ children }) => {
       setUser(demoSession.user);
       setUserProfile(DEMO_STUDENT.profile);
       setLoading(false);
+      setHasRedirected(false); // Permitir redirecionamento
       
       toast({
         title: "Login realizado!",
@@ -253,6 +275,7 @@ export const AuthProvider = ({ children }) => {
       setSession(null);
       setUser(null);
       setUserProfile(null);
+      setHasRedirected(false);
       
       toast({
         title: "Logout realizado",
