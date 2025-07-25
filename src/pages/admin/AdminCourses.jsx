@@ -16,7 +16,7 @@ const AdminCourses = () => {
     const [formData, setFormData] = useState({
         titulo: '',
         descricao: '',
-        area: '',
+        categoria: '',
         capa: ''
     });
     const [saving, setSaving] = useState(false);
@@ -54,11 +54,11 @@ const AdminCourses = () => {
     };
 
     const handleAddCourse = async () => {
-        if (!formData.titulo || !formData.descricao || !formData.area) {
+        if (!formData.titulo || !formData.descricao || !formData.categoria) {
             toast({
                 variant: "destructive",
                 title: "Campos obrigatórios",
-                description: "Preencha título, descrição e área.",
+                description: "Preencha título, descrição e categoria.",
             });
             return;
         }
@@ -70,7 +70,7 @@ const AdminCourses = () => {
                 .insert([{
                     titulo: formData.titulo,
                     descricao: formData.descricao,
-                    area: formData.area,
+                    categoria: formData.categoria,
                     capa: formData.capa || null,
                     slug: formData.titulo.toLowerCase()
                         .replace(/[^a-z0-9\s]/g, '')
@@ -94,7 +94,7 @@ const AdminCourses = () => {
 
             // Atualizar lista e limpar formulário
             fetchCourses();
-            setFormData({ titulo: '', descricao: '', area: '', capa: '' });
+            setFormData({ titulo: '', descricao: '', categoria: '', capa: '' });
             setShowForm(false);
         } catch (error) {
             toast({
@@ -109,7 +109,7 @@ const AdminCourses = () => {
 
     const filteredCourses = courses.filter(course =>
         course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.area.toLowerCase().includes(searchTerm.toLowerCase())
+        course.categoria.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
     const handleAction = (action) => {
@@ -173,12 +173,12 @@ const AdminCourses = () => {
                                     
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Área *
+                                            Categoria *
                                         </label>
                                         <input
                                             type="text"
-                                            value={formData.area}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
+                                            value={formData.categoria}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, categoria: e.target.value }))}
                                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             placeholder="Ex: Programação, IA, Design"
                                         />
@@ -234,7 +234,7 @@ const AdminCourses = () => {
                                 <tr className="border-b border-white/10 text-sm text-gray-400">
                                     <th className="p-4">Título</th>
                                     <th className="p-4">Descrição</th>
-                                    <th className="p-4">Área</th>
+                                    <th className="p-4">Categoria</th>
                                     <th className="p-4">Capa</th>
                                     <th className="p-4 text-right">Ações</th>
                                 </tr>
@@ -244,7 +244,7 @@ const AdminCourses = () => {
                                     <motion.tr key={course.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-white/10 hover:bg-white/5">
                                         <td className="p-4 font-semibold text-white">{course.titulo}</td>
                                         <td className="p-4 text-gray-300 max-w-xs truncate">{course.descricao}</td>
-                                        <td className="p-4 text-gray-300">{course.area}</td>
+                                        <td className="p-4 text-gray-300">{course.categoria}</td>
                                         <td className="p-4">
                                             {course.capa ? (
                                                 <img src={course.capa} alt={course.titulo} className="w-12 h-8 object-cover rounded" />
