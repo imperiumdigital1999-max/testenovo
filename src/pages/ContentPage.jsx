@@ -119,7 +119,14 @@ const ContentPage = () => {
       categoria: 'Programação'
     }
   ];
+
   const hasAccess = (cursoId) => {
+    // Usuário premium tem acesso a todos os cursos
+    if (userProfile?.plano === 'premium') {
+      return true;
+    }
+    
+    // Verifica se tem acesso individual na tabela acessos
     return userAccess.has(cursoId);
   };
 
@@ -145,25 +152,12 @@ const ContentPage = () => {
   const categories = [
     'Todos',
     'Programação',
-      // Não faz nada se não tem acesso - curso está bloqueado
-      toast({
-        title: "🔒 Curso Bloqueado",
-        description: "Você precisa de acesso premium ou comprar este curso individualmente.",
-        duration: 3000,
-      });
+    'Inteligência Artificial',
     'Design',
     'Marketing Digital',
     'Negócios'
-    }
-    
-    // Usuário premium tem acesso a todos os cursos
-    if (userProfile?.plano === 'premium') {
-      return true;
-    }
-    
-    // Verifica se tem acesso individual na tabela acessos
-    return userAccess.has(cursoId);
-  };
+  ];
+
   const filteredCourses = cursos.filter(course => {
     const matchesCategory = selectedCategory === 'Todos' || course.categoria === selectedCategory;
     const matchesSearch = course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
