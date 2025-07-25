@@ -15,7 +15,7 @@ const HomePage = () => {
 
   useEffect(() => {
     if (userProfile?.nome) {
-      setUserName(userProfile.nome);
+      setUserName(userProfile.nome.split(' ')[0]); // Usar apenas o primeiro nome
     }
   }, [userProfile]);
 

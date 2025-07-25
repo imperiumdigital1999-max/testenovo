@@ -7,59 +7,63 @@ import EditProfileForm from '@/components/profile/EditProfileForm';
 import StatsGrid from '@/components/profile/StatsGrid';
 import AchievementsList from '@/components/profile/AchievementsList';
 import SettingsSection from '@/components/profile/SettingsSection';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
   const { toast } = useToast();
+  const { userProfile, updateProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
     avatar: '',
-    joinDate: '2025-07-24',
-    lastAccess: '2025-07-24'
+    joinDate: '',
+    lastAccess: ''
   });
 
   useEffect(() => {
-    const savedName = localStorage.getItem('userName') || 'Estudante';
-    const savedEmail = localStorage.getItem('userEmail') || 'estudante@universidadedigital.com';
-    const savedAvatar = localStorage.getItem('userAvatar') || '';
+    if (userProfile) {
+      setProfileData({
+        name: userProfile.nome || 'Estudante',
+        email: userProfile.email || '',
+        avatar: '',
+        joinDate: new Date(userProfile.created_at).toLocaleDateString('pt-BR'),
+        lastAccess: 'Hoje'
+      });
+    }
+  }, [userProfile]);
 
-    setProfileData(prev => ({
-      ...prev,
-      name: savedName,
-      email: savedEmail,
-      avatar: savedAvatar
-    }));
-  }, []);
-
-  const handleSave = (editData) => {
-    localStorage.setItem('userName', editData.name);
-    localStorage.setItem('userEmail', editData.email);
-
-    setProfileData(prev => ({
-      ...prev,
-      name: editData.name,
+  const handleSave = async (editData) => {
+    const updates = {
+      nome: editData.name,
       email: editData.email
-    }));
+    };
 
+    const { error } = await updateProfile(updates);
+    
+    if (!error) {
+      setProfileData(prev => ({
+        ...prev,
+        name: editData.name,
+        email: editData.email
+      }));
+    }
+    
     setIsEditing(false);
-    toast({
-      title: "Perfil atualizado!",
-      description: "Suas informações foram salvas com sucesso",
-      duration: 3000,
-    });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso",
-      duration: 3000,
-    });
-    // navigate to login is handled by the protected route, but could be explicit here too
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (!error) {
+      navigate('/login');
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+        duration: 3000,
+      });
+    }
   };
   
   return (

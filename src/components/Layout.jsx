@@ -4,12 +4,14 @@ import { Home, BookOpen, Wrench, User, Menu, X, ShieldCheck } from 'lucide-react
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const Layout = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { toast } = useToast();
-  const isAdmin = localStorage.getItem('userRole') === 'admin';
+  const { userProfile } = useAuth();
+  const isAdmin = userProfile?.tipo === 'admin';
 
   const navItems = [
     { icon: Home, label: 'Início', path: '/' },
@@ -19,10 +21,10 @@ const Layout = ({ children }) => {
   ];
 
   if (isAdmin) {
-    navItems.push({ icon: ShieldCheck, label: 'Painel Admin', path: '/admin' });
+    navItems.push({ icon: ShieldCheck, label: 'Painel Admin', path: '/admin/dashboard' });
   }
 
-  const isActive = (path) => location.pathname === path || (path === '/admin' && location.pathname.startsWith('/admin'));
+  const isActive = (path) => location.pathname === path || (path === '/admin/dashboard' && location.pathname.startsWith('/admin'));
 
 
   return (

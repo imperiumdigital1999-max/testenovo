@@ -37,12 +37,12 @@ const LoginPage = () => {
         const { error } = await action(email, password, options);
 
         if (!error) {
-            toast({
-                title: isSignUp ? "Cadastro bem-sucedido!" : "Login bem-sucedido!",
-                description: isSignUp ? "Confirme seu e-mail para continuar." : `Bem-vindo de volta!`,
-                duration: 3000,
-            });
             if (!isSignUp) {
+                toast({
+                    title: "Login bem-sucedido!",
+                    description: "Bem-vindo de volta!",
+                    duration: 3000,
+                });
                 navigate('/');
             } else {
               setIsSignUp(false);

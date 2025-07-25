@@ -4,20 +4,52 @@ import { Helmet } from 'react-helmet';
 import { Search, PlusCircle, MoreHorizontal, Edit, Trash2, User, Mail, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/lib/customSupabaseClient';
+import React, { useState, useEffect } from 'react';
 
 const AdminUsers = () => {
     const { toast } = useToast();
+    const { userProfile } = useAuth();
     
-    const [users, setUsers] = useState([
-        { id: 1, name: 'João Silva', email: 'joao.silva@example.com', role: 'Aluno', status: 'Ativo' },
-        { id: 2, name: 'Maria Oliveira', email: 'maria.o@example.com', role: 'Aluno', status: 'Ativo' },
-        { id: 3, name: 'Admin', email: 'admin@universidadedigital.com', role: 'Admin', status: 'Ativo' },
-        { id: 4, name: 'Carlos Souza', email: 'carlos.s@example.com', role: 'Aluno', status: 'Inativo' },
-    ]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao carregar usuários",
+                    description: error.message,
+                });
+                return;
+            }
+
+            setUsers(data || []);
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Erro ao carregar usuários",
+                description: error.message,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const filteredUsers = users.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -29,6 +61,13 @@ const AdminUsers = () => {
         });
     };
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
+    }
     return (
         <>
             <Helmet>
@@ -69,27 +108,33 @@ const AdminUsers = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredUsers.map(user => (
-                                    <motion.tr key={user.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-white/10 hover:bg-white/5">
+                                {filteredUsers.map((user, index) => (
+                                    <motion.tr 
+                                        key={user.id} 
+                                        initial={{ opacity: 0 }} 
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        className="border-b border-white/10 hover:bg-white/5"
+                                    >
                                         <td className="p-4">
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
-                                                    {user.name.charAt(0)}
+                                                    {user.nome.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-white">{user.name}</p>
+                                                    <p className="font-semibold text-white">{user.nome}</p>
                                                     <p className="text-sm text-gray-400">{user.email}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'Admin' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                                {user.role}
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.tipo === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                {user.tipo === 'admin' ? 'Admin' : 'Aluno'}
                                             </span>
                                         </td>
                                         <td className="p-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'Ativo' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                                                {user.status}
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                                                Ativo
                                             </span>
                                         </td>
                                         <td className="p-4 text-right">
@@ -97,7 +142,12 @@ const AdminUsers = () => {
                                                 <Button variant="ghost" size="icon" onClick={() => handleAction('Editar')}>
                                                     <Edit className="h-4 w-4 text-gray-400 hover:text-yellow-400" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleAction('Excluir')}>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={() => handleAction('Excluir')}
+                                                    disabled={user.id === userProfile?.id}
+                                                >
                                                     <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-400" />
                                                 </Button>
                                             </div>
@@ -106,6 +156,12 @@ const AdminUsers = () => {
                                 ))}
                             </tbody>
                         </table>
+                        
+                        {filteredUsers.length === 0 && (
+                            <div className="text-center py-8">
+                                <p className="text-gray-400">Nenhum usuário encontrado</p>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
             </div>
