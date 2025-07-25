@@ -1,0 +1,7 @@
+## Pages
+- [- Universidade Digital](/course): No description available
+- [- Universidade Digital](/login): Acesse a plataforma da Universidade Digital.
+- [Conteúdo - Universidade Digital](/content): Explore todos os cursos disponíveis organizados por categoria com sistema de busca e filtros.
+- [Ferramentas IA - Universidade Digital](/tools): Acesse ferramentas de inteligência artificial para criação de conteúdo, imagens, código e muito mais.
+- [Início - Universidade Digital](/home): Página inicial da área de membros com destaques, cursos recentes e estatísticas de progresso.
+- [Perfil - Universidade Digital](/profile): Gerencie seu perfil, visualize estatísticas de progresso e conquistas na plataforma.
