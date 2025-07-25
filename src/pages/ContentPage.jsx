@@ -1,15 +1,108 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { Search, Filter, Play, Clock, Star, Users, ChevronRight } from 'lucide-react';
+import { Search, Filter, Play, Clock, Star, Users, ChevronRight, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/lib/customSupabaseClient';
 
 const ContentPage = () => {
   const { toast } = useToast();
+  const { userProfile } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const [cursos, setCursos] = useState([]);
+  const [userAccess, setUserAccess] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    fetchCursos();
+    if (userProfile) {
+      fetchUserAccess();
+    }
+  }, [userProfile]);
+
+  const fetchCursos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cursos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar cursos:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar cursos",
+          description: error.message,
+        });
+        return;
+      }
+
+      setCursos(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar cursos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserAccess = async () => {
+    if (!userProfile?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('acessos')
+        .select('curso_id')
+        .eq('user_id', userProfile.id);
+
+      if (error) {
+        console.error('Erro ao buscar acessos:', error);
+        return;
+      }
+
+      const accessSet = new Set(data?.map(item => item.curso_id) || []);
+      setUserAccess(accessSet);
+    } catch (error) {
+      console.error('Erro ao buscar acessos:', error);
+    }
+  };
+
+  const hasAccess = (cursoId) => {
+    // Usuário premium tem acesso a tudo
+    if (userProfile?.plano === 'premium') {
+      return true;
+    }
+    // Ou tem acesso específico ao curso
+    return userAccess.has(cursoId);
+  };
+
+  const handleCourseClick = (curso) => {
+    if (hasAccess(curso.id)) {
+      // Usuário tem acesso - navegar para o curso
+      toast({
+        title: "🚧 Este recurso ainda não foi implementado—mas não se preocupe! Você pode solicitá-lo no seu próximo prompt! 🚀",
+        duration: 3000,
+      });
+    } else {
+      // Usuário não tem acesso - mostrar opções
+      showAccessOptions(curso);
+    }
+  };
+
+  const showAccessOptions = (curso) => {
+    toast({
+      title: "🔒 Conteúdo Bloqueado",
+      description: "Você precisa ter acesso a este curso para visualizá-lo.",
+      duration: 5000,
+    });
+    
+    // Aqui você pode implementar um modal com as opções:
+    // - Comprar curso individual
+    // - Assinar plano premium
+  };
 
   const categories = [
     'Todos',
@@ -21,107 +114,33 @@ const ContentPage = () => {
     'Negócios'
   ];
 
-  const courses = [
-    {
-      id: 1,
-      title: 'React do Zero ao Avançado',
-      category: 'Programação',
-      instructor: 'Prof. Carlos Silva',
-      duration: '40h',
-      lessons: 120,
-      rating: 4.9,
-      students: 2847,
-      progress: 75,
-      image: 'Modern React development workspace with multiple monitors showing code',
-      description: 'Aprenda React desde o básico até conceitos avançados',
-      level: 'Intermediário'
-    },
-    {
-      id: 2,
-      title: 'IA Generativa na Prática',
-      category: 'Inteligência Artificial',
-      instructor: 'Dra. Ana Costa',
-      duration: '25h',
-      lessons: 80,
-      rating: 4.8,
-      students: 1923,
-      progress: 0,
-      image: 'Futuristic AI laboratory with neural networks and data visualization',
-      description: 'Domine as principais ferramentas de IA generativa',
-      level: 'Avançado'
-    },
-    {
-      id: 3,
-      title: 'UX/UI Design Moderno',
-      category: 'Design',
-      instructor: 'Prof. Marina Oliveira',
-      duration: '35h',
-      lessons: 95,
-      rating: 4.9,
-      students: 3241,
-      progress: 45,
-      image: 'Creative design studio with UI mockups and design tools',
-      description: 'Crie interfaces incríveis e experiências memoráveis',
-      level: 'Iniciante'
-    },
-    {
-      id: 4,
-      title: 'Python para Data Science',
-      category: 'Programação',
-      instructor: 'Dr. Roberto Santos',
-      duration: '50h',
-      lessons: 150,
-      rating: 4.7,
-      students: 1876,
-      progress: 20,
-      image: 'Data science workspace with Python code and data visualizations',
-      description: 'Análise de dados e machine learning com Python',
-      level: 'Intermediário'
-    },
-    {
-      id: 5,
-      title: 'Marketing Digital 360°',
-      category: 'Marketing Digital',
-      instructor: 'Prof. Juliana Ferreira',
-      duration: '30h',
-      lessons: 85,
-      rating: 4.8,
-      students: 2156,
-      progress: 0,
-      image: 'Digital marketing dashboard with analytics and social media metrics',
-      description: 'Estratégias completas de marketing digital',
-      level: 'Iniciante'
-    },
-    {
-      id: 6,
-      title: 'Harmonização Facial Avançada',
-      category: 'Estética',
-      instructor: 'Dra. Patricia Lima',
-      duration: '20h',
-      lessons: 60,
-      rating: 4.9,
-      students: 987,
-      progress: 90,
-      image: 'Professional aesthetic clinic with modern equipment and procedures',
-      description: 'Técnicas avançadas de harmonização facial',
-      level: 'Avançado'
-    }
-  ];
-
-  const filteredCourses = courses.filter(course => {
-    const matchesCategory = selectedCategory === 'Todos' || course.category === selectedCategory;
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCourses = cursos.filter(course => {
+    const matchesCategory = selectedCategory === 'Todos'; // Por enquanto, mostrar todos
+    const matchesSearch = course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.descricao.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const getLevelColor = (level) => {
-    switch (level) {
-      case 'Iniciante': return 'text-green-400 bg-green-400/10';
-      case 'Intermediário': return 'text-yellow-400 bg-yellow-400/10';
-      case 'Avançado': return 'text-red-400 bg-red-400/10';
-      default: return 'text-gray-400 bg-gray-400/10';
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  const isPremiumUser = userProfile?.plano === 'premium';
+
+  const renderAccessBadge = () => {
+    if (isPremiumUser) {
+      return (
+        <div className="flex items-center space-x-2 mb-4">
+          <Crown className="h-5 w-5 text-yellow-400" />
+          <span className="text-yellow-400 font-semibold">Usuário Premium</span>
+        </div>
+      );
     }
+    return null;
   };
 
   return (
@@ -144,6 +163,7 @@ const ContentPage = () => {
           <p className="text-gray-300 text-lg max-w-2xl mx-auto">
             Explore nossa coleção completa de cursos organizados por categoria
           </p>
+          {renderAccessBadge()}
         </motion.div>
 
         {/* Search and Filters */}
@@ -197,41 +217,57 @@ const ContentPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index }}
-              className="glass rounded-2xl overflow-hidden border border-white/10 card-hover cursor-pointer group"
-              onClick={() => toast({
-                title: "🚧 Este recurso ainda não foi implementado—mas não se preocupe! Você pode solicitá-lo no seu próximo prompt! 🚀",
-                duration: 3000,
-              })}
+              className="glass rounded-2xl overflow-hidden border border-white/10 card-hover cursor-pointer group relative"
+              onClick={() => handleCourseClick(course)}
             >
               {/* Course Image */}
               <div className="relative h-48 overflow-hidden">
                 <img  
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  alt={course.title}
-                 src="https://images.unsplash.com/photo-1635251595512-dc52146d5ae8" />
+                  alt={course.titulo}
+                  src={course.capa || "https://images.unsplash.com/photo-1635251595512-dc52146d5ae8"} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 neon-glow">
-                    <Play className="h-8 w-8 text-white" />
+                {/* Access Overlay */}
+                {!hasAccess(course.id) && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                    <div className="text-center">
+                      <Lock className="h-12 w-12 text-white mx-auto mb-2" />
+                      <p className="text-white font-semibold">Conteúdo Bloqueado</p>
+                      <p className="text-gray-300 text-sm">Clique para ver opções</p>
+                    </div>
                   </div>
+                )}
+
+                {/* Play Button - só aparece se tem acesso */}
+                {hasAccess(course.id) && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 neon-glow">
+                      <Play className="h-8 w-8 text-white" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Access Badge */}
+                <div className="absolute top-4 right-4">
+                  {hasAccess(course.id) ? (
+                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+                      ✓ Liberado
+                    </div>
+                  ) : (
+                    <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-medium">
+                      🔒 Bloqueado
+                    </div>
+                  )}
                 </div>
 
-                {/* Level Badge */}
-                <div className="absolute top-4 left-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
-                    {course.level}
-                  </span>
-                </div>
-
-                {/* Progress Bar (if started) */}
-                {course.progress > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
-                    <div 
-                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
-                      style={{ width: `${course.progress}%` }}
-                    ></div>
+                {/* Premium Badge */}
+                {isPremiumUser && (
+                  <div className="absolute top-4 left-4">
+                    <div className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                      <Crown className="h-3 w-3" />
+                      <span>Premium</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -239,53 +275,39 @@ const ContentPage = () => {
               {/* Course Info */}
               <div className="p-6 space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
-                    {course.title}
+                  <h3 className={`text-xl font-bold mb-2 transition-colors ${
+                    hasAccess(course.id) 
+                      ? 'text-white group-hover:text-purple-300' 
+                      : 'text-gray-400'
+                  }`}>
+                    {course.titulo}
                   </h3>
-                  <p className="text-gray-400 text-sm mb-3">{course.description}</p>
-                  <p className="text-purple-400 text-sm font-medium">{course.instructor}</p>
+                  <p className="text-gray-400 text-sm mb-3">{course.descricao}</p>
                 </div>
 
-                {/* Course Stats */}
-                <div className="flex items-center justify-between text-sm text-gray-400">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{course.duration}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Play className="h-4 w-4" />
-                      <span>{course.lessons} aulas</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span>{course.rating}</span>
-                  </div>
-                </div>
-
-                {/* Students Count */}
+                {/* Access Status */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1 text-sm text-gray-400">
-                    <Users className="h-4 w-4" />
-                    <span>{course.students.toLocaleString()} estudantes</span>
+                  <div className={`text-sm ${hasAccess(course.id) ? 'text-green-400' : 'text-red-400'}`}>
+                    {hasAccess(course.id) ? '✓ Acesso liberado' : '🔒 Acesso bloqueado'}
                   </div>
-                  <ChevronRight className="h-5 w-5 text-purple-400 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className={`h-5 w-5 group-hover:translate-x-1 transition-transform ${
+                    hasAccess(course.id) ? 'text-purple-400' : 'text-gray-500'
+                  }`} />
                 </div>
 
-                {/* Progress (if started) */}
-                {course.progress > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Progresso</span>
-                      <span className="text-purple-400">{course.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
-                    </div>
+                {/* Action Button */}
+                {!hasAccess(course.id) && (
+                  <div className="pt-2">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        showAccessOptions(course);
+                      }}
+                    >
+                      <Lock className="mr-2 h-4 w-4" />
+                      Desbloquear Curso
+                    </Button>
                   </div>
                 )}
               </div>
