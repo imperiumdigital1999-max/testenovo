@@ -145,12 +145,25 @@ const ContentPage = () => {
   const categories = [
     'Todos',
     'Programação',
-    'Inteligência Artificial',
+      // Não faz nada se não tem acesso - curso está bloqueado
+      toast({
+        title: "🔒 Curso Bloqueado",
+        description: "Você precisa de acesso premium ou comprar este curso individualmente.",
+        duration: 3000,
+      });
     'Design',
     'Marketing Digital',
     'Negócios'
-  ];
-
+    }
+    
+    // Usuário premium tem acesso a todos os cursos
+    if (userProfile?.plano === 'premium') {
+      return true;
+    }
+    
+    // Verifica se tem acesso individual na tabela acessos
+    return userAccess.has(cursoId);
+  };
   const filteredCourses = cursos.filter(course => {
     const matchesCategory = selectedCategory === 'Todos' || course.categoria === selectedCategory;
     const matchesSearch = course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -239,29 +252,31 @@ const ContentPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index }}
-              className="glass rounded-2xl overflow-hidden border border-white/10 card-hover cursor-pointer group relative"
+              className={`glass rounded-2xl overflow-hidden border border-white/10 group relative ${
+                hasAccess(course.id) ? 'card-hover cursor-pointer' : 'cursor-not-allowed'
+              }`}
               onClick={() => handleCourseClick(course)}
             >
               {/* Course Image */}
               <div className="relative h-48 overflow-hidden">
                 <img  
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className={`w-full h-full object-cover transition-transform duration-500 ${
+                    hasAccess(course.id) ? 'group-hover:scale-110' : ''
+                  }`}
                   alt={course.titulo}
                   src={course.capa} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 
-                {/* Play Button ou Lock Icon */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 neon-glow">
-                    {hasAccess(course.id) ? (
+                {/* Play Button - apenas para cursos liberados */}
+                {hasAccess(course.id) && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 neon-glow">
                       <Play className="h-8 w-8 text-white" />
-                    ) : (
-                      <Lock className="h-8 w-8 text-white" />
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Lock Icon - aparece sempre se não tem acesso */}
+                {/* Lock Icon - aparece no canto se não tem acesso */}
                 {!hasAccess(course.id) && (
                   <div className="absolute top-4 right-4">
                     <div className="bg-black/50 rounded-full p-2">
@@ -274,7 +289,9 @@ const ContentPage = () => {
               {/* Course Info */}
               <div className="p-6 space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
+                  <h3 className={`text-xl font-bold text-white mb-2 transition-colors ${
+                    hasAccess(course.id) ? 'group-hover:text-purple-300' : ''
+                  }`}>
                     {course.titulo}
                   </h3>
                   <p className="text-gray-400 text-sm mb-3">{course.descricao}</p>
@@ -287,25 +304,13 @@ const ContentPage = () => {
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
                     <span>4.8</span>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-purple-400 group-hover:translate-x-1 transition-transform" />
+                  {hasAccess(course.id) ? (
+                    <ChevronRight className="h-5 w-5 text-purple-400 group-hover:translate-x-1 transition-transform" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-gray-500" />
+                  )}
                 </div>
 
-                {/* Botão de ação */}
-                {!hasAccess(course.id) && (
-                  <div className="pt-2">
-                    <Button 
-                      className="w-full bg-gray-600 hover:bg-gray-500 text-white text-sm cursor-not-allowed"
-                      disabled
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showAccessOptions(course);
-                      }}
-                    >
-                      <Lock className="mr-2 h-4 w-4" />
-                      Desbloquear
-                    </Button>
-                  </div>
-                )}
               </div>
             </motion.div>
           ))}
