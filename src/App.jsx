@@ -15,6 +15,7 @@ import LoginPage from '@/pages/LoginPage';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminCourses from '@/pages/admin/AdminCourses';
+import AdminCourseEdit from '@/pages/admin/AdminCourseEdit';
 import AdminTools from '@/pages/admin/AdminTools';
 
 import { Toaster } from '@/components/ui/toaster';
@@ -101,6 +102,7 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="courses" element={<AdminCourses />} />
+        <Route path="courses/:id/edit" element={<AdminCourseEdit />} />
         <Route path="tools" element={<AdminTools />} />
       </Route>
 
