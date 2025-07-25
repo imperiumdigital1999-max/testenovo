@@ -628,15 +628,13 @@ const AdminCourseEdit = () => {
                                             </div>
                                             
                                             {/* Botões de Ação */}
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditModule(module)}>
-                                                <Edit className="h-4 w-4 text-gray-400 hover:text-yellow-400" />
-                                            </Button>
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
                                                 onClick={() => navigate(`/admin/courses/${id}/modules/${module.id}/edit`)}
+                                                className="hover:bg-white/10"
                                             >
-                                                <Edit className="h-4 w-4 text-gray-400 hover:text-blue-400" />
+                                                <Edit className="h-4 w-4 text-gray-400 hover:text-yellow-400" />
                                             </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteModule(module.id)}>
                                                 <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-400" />
