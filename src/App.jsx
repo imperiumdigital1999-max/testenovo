@@ -16,6 +16,7 @@ import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminCourses from '@/pages/admin/AdminCourses';
 import AdminCourseEdit from '@/pages/admin/AdminCourseEdit';
+import AdminModuleEdit from '@/pages/admin/AdminModuleEdit';
 import AdminTools from '@/pages/admin/AdminTools';
 
 import { Toaster } from '@/components/ui/toaster';
@@ -103,6 +104,7 @@ const AppRoutes = () => {
         <Route path="users" element={<AdminUsers />} />
         <Route path="courses" element={<AdminCourses />} />
         <Route path="courses/:id/edit" element={<AdminCourseEdit />} />
+        <Route path="courses/:courseId/modules/:moduleId/edit" element={<AdminModuleEdit />} />
         <Route path="tools" element={<AdminTools />} />
       </Route>
 
