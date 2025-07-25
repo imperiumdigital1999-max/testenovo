@@ -46,13 +46,16 @@ export const AuthProvider = ({ children }) => {
     
     // Verificar se é usuário demo
     if (userId === DEMO_USER.id) {
+      console.log("Retornando perfil demo admin:", DEMO_USER.profile);
       return DEMO_USER.profile;
     }
     if (userId === DEMO_STUDENT.id) {
+      console.log("Retornando perfil demo aluno:", DEMO_STUDENT.profile);
       return DEMO_STUDENT.profile;
     }
     
     try {
+      console.log("Buscando perfil no Supabase para userId:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -63,9 +66,11 @@ export const AuthProvider = ({ children }) => {
         if (error.code !== 'PGRST116') { // Not found error is expected for new users
           console.error('Error fetching user profile:', error);
         }
+        console.log("Perfil não encontrado no banco para userId:", userId);
         return null;
       }
 
+      console.log("Perfil encontrado no Supabase:", data);
       return data;
     } catch (error) {
       if (error.name !== 'AbortError') { // Ignore abort errors
@@ -81,7 +86,9 @@ export const AuthProvider = ({ children }) => {
     
     if (session?.user) {
       try {
+        console.log("Carregando perfil para usuário:", session.user.id);
         const profile = await fetchUserProfile(session.user.id);
+        console.log("Perfil carregado do banco:", profile);
         setUserProfile(profile);
       } catch (error) {
         console.error('Error handling session:', error);
@@ -171,6 +178,7 @@ export const AuthProvider = ({ children }) => {
         refresh_token: 'demo-refresh'
       };
       
+      console.log("Login demo admin realizado, definindo sessão:", demoSession);
       setSession(demoSession);
       setUser(demoSession.user);
       setUserProfile(DEMO_USER.profile);
@@ -195,6 +203,7 @@ export const AuthProvider = ({ children }) => {
         refresh_token: 'demo-refresh'
       };
       
+      console.log("Login demo aluno realizado, definindo sessão:", demoSession);
       setSession(demoSession);
       setUser(demoSession.user);
       setUserProfile(DEMO_STUDENT.profile);
@@ -209,21 +218,26 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
+      console.log("Tentando login no Supabase para:", email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Erro no login Supabase:", error);
         toast({
           variant: "destructive",
           title: "Erro no login",
           description: error.message || "Something went wrong",
         });
+      } else {
+        console.log("Login no Supabase bem-sucedido");
       }
 
       return { error };
     } catch (error) {
+      console.error("Erro de conexão no login:", error);
       toast({
         variant: "destructive",
         title: "Erro de conexão",

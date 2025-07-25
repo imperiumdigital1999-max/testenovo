@@ -26,6 +26,13 @@ const AppRoutes = () => {
   const location = useLocation();
   const { toast } = useToast();
 
+  // Log do perfil do usuário para debug
+  useEffect(() => {
+    if (!loading && userProfile) {
+      console.log("Perfil carregado:", userProfile);
+    }
+  }, [loading, userProfile]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -39,12 +46,23 @@ const AppRoutes = () => {
   }
 
   if (session) {
+    // Aguardar o carregamento completo do perfil antes de redirecionar
     if (userProfile && location.pathname === '/login') {
+      console.log("Redirecionando usuário baseado no tipo:", userProfile.tipo);
       if (userProfile.tipo === 'admin') {
         return <Navigate to="/admin/dashboard" replace />;
       } else {
         return <Navigate to="/" replace />;
       }
+    }
+
+    // Se ainda está carregando o perfil e está na página de login, mostrar loading
+    if (!userProfile && location.pathname === '/login') {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+      );
     }
 
     if (userProfile?.tipo === 'aluno' && location.pathname.startsWith('/admin')) {
