@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }) => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options,
+        options: options || {},
       });
 
       if (error) {
