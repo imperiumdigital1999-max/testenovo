@@ -16,6 +16,12 @@ const AdminCourses = () => {
     const [editingCourse, setEditingCourse] = useState(null);
     const [modules, setModules] = useState([]);
     const [showModuleForm, setShowModuleForm] = useState(false);
+    const [editCourseData, setEditCourseData] = useState({
+        titulo: '',
+        descricao: '',
+        categoria: '',
+        capa: ''
+    });
     const [formData, setFormData] = useState({
         titulo: '',
         descricao: '',
@@ -145,7 +151,73 @@ const AdminCourses = () => {
 
     const handleEditCourse = async (course) => {
         setEditingCourse(course);
+        setEditCourseData({
+            titulo: course.titulo,
+            descricao: course.descricao,
+            categoria: course.categoria,
+            capa: course.capa || ''
+        });
         await fetchModules(course.id);
+    };
+
+    const handleUpdateCourse = async () => {
+        if (!editCourseData.titulo || !editCourseData.descricao || !editCourseData.categoria) {
+            toast({
+                variant: "destructive",
+                title: "Campos obrigatórios",
+                description: "Preencha título, descrição e categoria.",
+            });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('cursos')
+                .update({
+                    titulo: editCourseData.titulo,
+                    descricao: editCourseData.descricao,
+                    categoria: editCourseData.categoria,
+                    capa: editCourseData.capa || null,
+                    slug: editCourseData.titulo.toLowerCase()
+                        .replace(/[^a-z0-9\s]/g, '')
+                        .replace(/\s+/g, '-'),
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', editingCourse.id);
+
+            if (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao atualizar curso",
+                    description: error.message,
+                });
+                return;
+            }
+
+            toast({
+                title: "Curso atualizado!",
+                description: "As informações do curso foram salvas com sucesso.",
+            });
+
+            // Atualizar lista de cursos e dados do curso em edição
+            fetchCourses();
+            setEditingCourse(prev => ({
+                ...prev,
+                titulo: editCourseData.titulo,
+                descricao: editCourseData.descricao,
+                categoria: editCourseData.categoria,
+                capa: editCourseData.capa
+            }));
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Erro ao atualizar curso",
+                description: error.message,
+            });
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleAddModule = async () => {
@@ -448,8 +520,74 @@ const AdminCourses = () => {
                                 </Button>
                             </div>
 
-                            {/* Seção de Módulos */}
+                            {/* Seção de Edição do Curso */}
                             <div className="space-y-6">
+                                <div className="glass rounded-xl p-6 border border-white/10">
+                                    <h3 className="text-xl font-semibold text-white mb-4">Dados do Curso</h3>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                Título do Curso *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editCourseData.titulo}
+                                                onChange={(e) => setEditCourseData(prev => ({ ...prev, titulo: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                placeholder="Ex: React do Zero ao Avançado"
+                                            />
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                Categoria *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editCourseData.categoria}
+                                                onChange={(e) => setEditCourseData(prev => ({ ...prev, categoria: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                placeholder="Ex: Programação, IA, Design"
+                                            />
+                                        </div>
+                                        
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                Descrição *
+                                            </label>
+                                            <textarea
+                                                value={editCourseData.descricao}
+                                                onChange={(e) => setEditCourseData(prev => ({ ...prev, descricao: e.target.value }))}
+                                                rows={3}
+                                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                                                placeholder="Descreva o conteúdo do curso..."
+                                            />
+                                        </div>
+                                        
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                URL da Imagem (Capa)
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={editCourseData.capa}
+                                                onChange={(e) => setEditCourseData(prev => ({ ...prev, capa: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                placeholder="https://exemplo.com/imagem.jpg"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex justify-end mt-4">
+                                        <Button onClick={handleUpdateCourse} disabled={saving} className="bg-gradient-to-r from-blue-500 to-cyan-500">
+                                            <Save className="mr-2 h-4 w-4" />
+                                            {saving ? 'Salvando...' : 'Salvar Alterações'}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                            {/* Seção de Módulos */}
                                 <div className="border-t border-white/10 pt-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-xl font-semibold text-white">Módulos do Curso</h3>
