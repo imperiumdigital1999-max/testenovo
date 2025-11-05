@@ -26,13 +26,20 @@ const ContentPage = () => {
 
   const fetchCursos = async () => {
     try {
+      // Check if Supabase client is properly configured
+      if (!supabase || !supabase.from) {
+        console.warn('Supabase client not properly configured, using mock data');
+        setCursos(mockCourses);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('cursos')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar cursos:', error);
+        console.warn('Erro ao buscar cursos do Supabase:', error.message);
         // Usar cursos mock se não conseguir buscar do Supabase
         setCursos(mockCourses);
         return;
@@ -40,7 +47,7 @@ const ContentPage = () => {
 
       setCursos(data && data.length > 0 ? data : mockCourses);
     } catch (error) {
-      console.error('Erro ao buscar cursos:', error);
+      console.warn('Falha na conexão com Supabase, usando dados mock:', error.message);
       setCursos(mockCourses);
     } finally {
       setLoading(false);
@@ -51,20 +58,26 @@ const ContentPage = () => {
     if (!userProfile?.id) return;
 
     try {
+      // Check if Supabase client is properly configured
+      if (!supabase || !supabase.from) {
+        console.warn('Supabase client not available for user access check');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('acessos')
         .select('curso_id')
         .eq('user_id', userProfile.id);
 
       if (error) {
-        console.error('Erro ao buscar acessos:', error);
+        console.warn('Erro ao buscar acessos do usuário:', error.message);
         return;
       }
 
       const accessSet = new Set(data?.map(item => item.curso_id) || []);
       setUserAccess(accessSet);
     } catch (error) {
-      console.error('Erro ao buscar acessos:', error);
+      console.warn('Falha ao verificar acessos do usuário:', error.message);
     }
   };
 
