@@ -50,6 +50,3 @@ export const safeSupabaseOperation = async (operation, fallback = null) => {
     return fallback;
   }
 };
-    },
-  },
-});
